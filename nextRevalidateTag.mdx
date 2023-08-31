@@ -1,0 +1,56 @@
+---
+title: 'Next.js 13 revalidateTag'
+subtitle: "Refetch data based on when a specific cached tag's data changes"
+date: '2023-08-31'
+tags: ['next.js', 'nextjs']
+---
+
+# revalidateTag
+The ***revalidateTag*** allows you to re-fetch data that is associated with a specific cache tag when the associated data changes.
+
+Example of the ***revalidateTag***  in a server action
+```ts
+"use server";
+
+import  {  Product  }  from  "@typings";
+import  {  revalidateTag  }  from  "next/cache";  
+
+// Server Actions
+export  async  function  addProductToDatabase(e:  FormData)  {
+	const  product  =  e.get("product")?.toString();
+	const  price  =  e.get("price")?.toString();
+
+	if  (!product  ||  !price)  return; 
+
+	const  newProduct:  Product  =  {
+	product,
+	price,
+};  
+
+	await  fetch("https://64ad5c11b470006a5ec5d42c.mockapi.io/products",  {
+		method:  "POST",
+		body:  JSON.stringify(newProduct),
+		headers:  {
+		"Content-Type":  "application/json",
+		},
+
+		});
+
+		revalidateTag("products");
+}
+```
+The above server action will add a new product to the database (in this case a mock api backend) and once the new data is added the front end will make another fetch request to update the UI with the new data.  
+
+The front end code looks like this:
+```ts
+const  res  =  await  fetch("https://64ad5c11b470006a5ec5d42c.mockapi.io/products",
+{
+	cache:  "no-cache",
+	next:  {
+	tags: ["products"],
+	},
+});  
+
+const  products:  Product[] =  await  res.json();
+```
+The front end fetch request will take in an options parameter that sets the 'cache' property to 'no-cache' and sets the 'next' object with the 'tags' property set to an array of cache tags.
